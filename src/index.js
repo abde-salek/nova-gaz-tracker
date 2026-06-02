@@ -16,40 +16,39 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'Nova Gaz Tracker' });
 });
 
-// ─── Local test helpers (only available when MOCK_WHATSAPP=true) ──────────────
+// ─── Local test helpers (always available for dev) ─────────────────────────────
+
+/**
+ * POST /test/message
+ * Body: { "from": "212600000002", "text": "B 3" }
+ * Always returns 200 — errors are logged server-side, not thrown to client.
+ */
+app.post('/test/message', async (req, res) => {
+  const { from, text } = req.body;
+  if (!from || !text) {
+    return res.status(400).json({ error: 'Body must have "from" and "text"' });
+  }
+  // Respond immediately — same pattern as the real webhook
+  res.json({ ok: true, from, text });
+  // Process in background
+  routeMessage(from, text).catch(err => {
+    console.error(`[Test] routeMessage error for ${from}:`, err.message);
+  });
+});
+
+/**
+ * POST /test/autoclose
+ * Manually triggers the 22:00 auto-close job.
+ */
+app.post('/test/autoclose', async (req, res) => {
+  // Respond immediately, run in background
+  res.json({ ok: true, message: 'Auto-close triggered' });
+  autoClose().catch(err => {
+    console.error('[Test] Auto-close error:', err.message);
+  });
+});
 
 if (process.env.MOCK_WHATSAPP === 'true') {
-
-  /**
-   * POST /test/message
-   * Body: { "from": "212600000002", "text": "B 3" }
-   * Always returns 200 — errors are logged server-side, not thrown to client.
-   */
-  app.post('/test/message', async (req, res) => {
-    const { from, text } = req.body;
-    if (!from || !text) {
-      return res.status(400).json({ error: 'Body must have "from" and "text"' });
-    }
-    // Respond immediately — same pattern as the real webhook
-    res.json({ ok: true, from, text });
-    // Process in background
-    routeMessage(from, text).catch(err => {
-      console.error(`[Test] routeMessage error for ${from}:`, err.message);
-    });
-  });
-
-  /**
-   * POST /test/autoclose
-   * Manually triggers the 22:00 auto-close job.
-   */
-  app.post('/test/autoclose', async (req, res) => {
-    // Respond immediately, run in background
-    res.json({ ok: true, message: 'Auto-close triggered' });
-    autoClose().catch(err => {
-      console.error('[Test] Auto-close error:', err.message);
-    });
-  });
-
   console.log('[Dev] Test endpoints active:');
   console.log('      POST /test/message   { "from": "212...", "text": "B 3" }');
   console.log('      POST /test/autoclose');

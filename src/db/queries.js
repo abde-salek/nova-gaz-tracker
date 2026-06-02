@@ -68,11 +68,11 @@ async function setFullStock(truckId, fullB, fullM, fullS) {
   const { rows } = await pool.query(
     `INSERT INTO truck_stock
        (truck_id, full_b, full_m, full_s, empty_b, empty_m, empty_s,
-        today_money, unpaid_total, day_closed, undo_used, updated_at)
-     VALUES ($1, $2, $3, $4, 0, 0, 0, 0, 0, false, false, NOW())
+        today_money, unpaid_total, day_closed, updated_at)
+     VALUES ($1, $2, $3, $4, 0, 0, 0, 0, 0, false, NOW())
      ON CONFLICT (truck_id) DO UPDATE SET
        full_b = $2, full_m = $3, full_s = $4,
-       day_closed = false, undo_used = false,
+       day_closed = false,
        updated_at = NOW()
      RETURNING *`,
     [truckId, fullB, fullM, fullS]
@@ -132,7 +132,6 @@ async function undoLastSale(truckId) {
        empty_m     = empty_m - $3,
        empty_s     = empty_s - $4,
        today_money = today_money - $5,
-       undo_used   = true,
        updated_at  = NOW()
      WHERE truck_id = $1`,
     [truckId, sale.qty_b, sale.qty_m, sale.qty_s, refund]
@@ -145,13 +144,6 @@ async function undoLastSale(truckId) {
   );
 
   return sale;
-}
-
-async function markUndoUsed(truckId) {
-  await pool.query(
-    'UPDATE truck_stock SET undo_used = true WHERE truck_id = $1',
-    [truckId]
-  );
 }
 
 async function resetPaidTotal(truckId) {
@@ -184,7 +176,6 @@ async function closeDay(truckId) {
        unpaid_total = unpaid_total + today_money,
        today_money  = 0,
        day_closed   = true,
-       undo_used    = false,
        updated_at   = NOW()
      WHERE truck_id = $1
      RETURNING *`,
@@ -239,6 +230,16 @@ async function getPrices() {
   return map; // { B: 50, M: 20, S: 10 }
 }
 
+async function setPrice(size, priceDh) {
+  await pool.query(
+    `INSERT INTO prices (size, price_dh, effective_date)
+     VALUES ($1, $2, CURRENT_DATE)
+     ON CONFLICT (size, effective_date)
+     DO UPDATE SET price_dh = $2`,
+    [size, priceDh]
+  );
+}
+
 // ─── Salesperson for truck ────────────────────────────────────────────────────
 
 async function getSalespersonByTruck(truckId) {
@@ -280,7 +281,6 @@ module.exports = {
   setFullStock,
   applyStockSale,
   undoLastSale,
-  markUndoUsed,
   resetPaidTotal,
   resetEmpties,
   closeDay,
@@ -288,6 +288,7 @@ module.exports = {
   recordSale,
   getTodaySales,
   getPrices,
+  setPrice,
   getSalespersonByTruck,
   getAllManagers,
   normalizePhone,

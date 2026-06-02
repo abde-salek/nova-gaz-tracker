@@ -89,7 +89,7 @@ function truckStatus(truckId, stock, todaySales, prices) {
 
 function undoConfirm(sale) {
   const desc = formatSoldRaw(sale.qty_b, sale.qty_m, sale.qty_s);
-  return `✓ Last entry undone (${desc}). UNDO used for today — no further undos until tomorrow.`;
+  return `✓ Last entry undone (${desc}).`;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

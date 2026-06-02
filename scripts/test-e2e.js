@@ -137,9 +137,9 @@ async function runTests() {
   console.log('\n── 8. UNDO (first use — should succeed) ──');
   await assertSend('UNDO first use accepted', SALES, 'UNDO');
 
-  // ── 9. UNDO second use (boundary) ────────────────────────────────────────
-  console.log('\n── 9. UNDO (second use — boundary check) ──');
-  await assertSend('UNDO second use rejected (check server log)', SALES, 'UNDO');
+  // ── 9. UNDO second use (unlimited now) ───────────────────────────────────
+  console.log('\n── 9. UNDO (second use — should succeed) ──');
+  await assertSend('UNDO second use accepted', SALES, 'UNDO');
 
   // ── 10. Invalid command ───────────────────────────────────────────────────
   console.log('\n── 10. Invalid command ──');

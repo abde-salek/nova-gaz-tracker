@@ -85,11 +85,6 @@ async function handleUndo(person, from, truckId) {
 
   if (!stock) return sendMessage(from, '⚠ No stock initialized for your truck.');
 
-  // UNDO boundary: only once per day
-  if (stock.undo_used) {
-    return sendMessage(from, '✗ UNDO already used today. Only one undo allowed per day.');
-  }
-
   if (stock.day_closed) {
     return sendMessage(from, '✗ Day is already closed. UNDO is not available.');
   }

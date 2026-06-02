@@ -39,6 +39,10 @@ async function handleManager(person, text, from) {
   const removeMatch = text.match(/^REMOVE PERSON (\S+)$/);
   if (removeMatch) return handleRemovePerson(from, removeMatch[1]);
 
+  // ── SET PRICE B|M|S amount ──────────────────────────────────────────────
+  const priceMatch = text.match(/^SET PRICE (B|M|S)\s+(\d+([.,]\d+)?)$/);
+  if (priceMatch) return handleSetPrice(from, priceMatch);
+
   // ── Unknown command ──────────────────────────────────────────────────────
   return sendMessage(from, managerHelp());
 }
@@ -105,14 +109,40 @@ async function handleEmptyDone(from, truckId) {
 
 // ─── ADD MANAGER ──────────────────────────────────────────────────────────────
 
+const WELCOME_MANAGER =
+  `Welcome to Nova Gaz Tracker! You are registered as a manager.\n\n` +
+  `Commands:\n` +
+  `SET TRUCK n B20 M15 S30\n` +
+  `STATUS TRUCK n\n` +
+  `PAID TRUCK n\n` +
+  `EMPTY DONE TRUCK n\n` +
+  `SET PRICE <B/M/S> <price>\n` +
+  `ADD SALES 06xxxxxxxx Name TRUCK n\n` +
+  `ADD MANAGER 06xxxxxxxx Name\n` +
+  `REMOVE PERSON 06xxxxxxxx`;
+
+const WELCOME_SALES = (name, truckId) =>
+  `Welcome ${name} to Nova Gaz Tracker! You are assigned to Truck ${truckId}.\n\n` +
+  `Commands:\n` +
+  `B 3   — sell 3 big\n` +
+  `M 2   — sell 2 medium\n` +
+  `S 5   — sell 5 small\n` +
+  `B 3\\nM 2 — multi-line sale\n` +
+  `TODAY — see today's totals\n` +
+  `DONE  — close the day\n` +
+  `UNDO  — cancel last entry`;
+
 async function handleAddManager(from, match) {
   const phone = match[1];
   const name  = match[2].trim();
 
-  await db.addPerson({ phone, name, role: 'manager' });
+  const person = await db.addPerson({ phone, name, role: 'manager' });
+
+  // Send welcome to the new manager
+  await sendMessage(person.phone, WELCOME_MANAGER);
 
   return sendMessage(from,
-    `✓ Manager added: ${name} (${phone})`
+    `✓ Manager added: ${name} (${person.phone})`
   );
 }
 
@@ -125,10 +155,13 @@ async function handleAddSales(from, match) {
 
   // Ensure truck exists
   await db.upsertTruck(truckId);
-  await db.addPerson({ phone, name, role: 'sales', truckId });
+  const person = await db.addPerson({ phone, name, role: 'sales', truckId });
+
+  // Send welcome to the new salesperson
+  await sendMessage(person.phone, WELCOME_SALES(name, truckId));
 
   return sendMessage(from,
-    `✓ Salesperson added: ${name} (${phone}) → Truck ${truckId}`
+    `✓ Salesperson added: ${name} (${person.phone}) → Truck ${truckId}`
   );
 }
 
@@ -144,6 +177,19 @@ async function handleRemovePerson(from, phone) {
   return sendMessage(from, `✓ Removed person with number ${phone}.`);
 }
 
+// ─── SET PRICE ─────────────────────────────────────────────────────────────────
+
+async function handleSetPrice(from, match) {
+  const size  = match[1].toUpperCase();
+  const price = parseFloat(match[2].replace(',', '.'));
+
+  await db.setPrice(size, price);
+
+  return sendMessage(from,
+    `✓ Price set: ${size} = ${price.toFixed(2)} DH`
+  );
+}
+
 // ─── Help ─────────────────────────────────────────────────────────────────────
 
 function managerHelp() {
@@ -153,6 +199,7 @@ function managerHelp() {
     `STATUS TRUCK n\n` +
     `PAID TRUCK n\n` +
     `EMPTY DONE TRUCK n\n` +
+    `SET PRICE <B/M/S> <amount>\n` +
     `ADD MANAGER 06xxxxxxxx Name\n` +
     `ADD SALES 06xxxxxxxx Name TRUCK n\n` +
     `REMOVE PERSON 06xxxxxxxx`
