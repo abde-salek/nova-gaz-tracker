@@ -127,7 +127,7 @@ const WELCOME_SALES = (name, truckId) =>
   `B 3   — sell 3 big\n` +
   `M 2   — sell 2 medium\n` +
   `S 5   — sell 5 small\n` +
-  `B 3\\nM 2 — multi-line sale\n` +
+  `B 3 \ M 2 — multi-line sale\n` +
   `TODAY — see today's totals\n` +
   `DONE  — close the day\n` +
   `UNDO  — cancel last entry`;
