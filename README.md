@@ -56,7 +56,7 @@ Copy `.env.example` to `.env` and fill in:
 
 | Variable                | Description                                      |
 |-------------------------|--------------------------------------------------|
-| `WHATSAPP_TOKEN`        | Permanent access token from Meta Business Suite  |
+| `WHATSAPP_TOKEN`        | Access token from Meta Business Suite  |
 | `WHATSAPP_PHONE_ID`     | Phone Number ID from the WhatsApp app dashboard  |
 | `WHATSAPP_VERIFY_TOKEN` | Any random string — must match Meta webhook config |
 | `DATABASE_URL`          | Supabase connection string (Settings → Database) |
